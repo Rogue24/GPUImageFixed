@@ -21,7 +21,7 @@
 {
     if (!(self = [super init]))
     {
-		return nil;
+        return nil;
     }
     
     view = inputView;
@@ -37,7 +37,7 @@
 {
     if (!(self = [super init]))
     {
-		return nil;
+        return nil;
     }
     
     view = nil;
@@ -86,10 +86,10 @@
     
     GLubyte *imageData = (GLubyte *) calloc(1, (int)layerPixelSize.width * (int)layerPixelSize.height * 4);
     
-    CGColorSpaceRef genericRGBColorspace = CGColorSpaceCreateDeviceRGB();    
+    CGColorSpaceRef genericRGBColorspace = CGColorSpaceCreateDeviceRGB();
     CGContextRef imageContext = CGBitmapContextCreate(imageData, (int)layerPixelSize.width, (int)layerPixelSize.height, 8, (int)layerPixelSize.width * 4, genericRGBColorspace,  kCGBitmapByteOrder32Little | kCGImageAlphaPremultipliedFirst);
 //    CGContextRotateCTM(imageContext, M_PI_2);
-	CGContextTranslateCTM(imageContext, 0.0f, layerPixelSize.height);
+    CGContextTranslateCTM(imageContext, 0.0f, layerPixelSize.height);
     CGContextScaleCTM(imageContext, layer.contentsScale, -layer.contentsScale);
     //        CGContextSetBlendMode(imageContext, kCGBlendModeCopy); // From Technical Q&A QA1708: http://developer.apple.com/library/ios/#qa/qa1708/_index.html
     
@@ -100,6 +100,8 @@
     
     // TODO: This may not work
     outputFramebuffer = [[GPUImageContext sharedFramebufferCache] fetchFramebufferForSize:layerPixelSize textureOptions:self.outputTextureOptions onlyTexture:YES];
+#warning jp_修改GPUImage：解决<<单次刷新静态水印导致崩溃>>的问题
+    [outputFramebuffer disableReferenceCounting]; // Add this line, because GPUImageTwoInputFilter.m frametime updatedMovieFrameOppositeStillImage is YES, but the secondbuffer not lock. 添加此行，因为GPUImageTwoInputFilter.m frametime updatedMovieFrameOppositeStillImage为YES，但第二个缓冲区未锁定。
 
     glBindTexture(GL_TEXTURE_2D, [outputFramebuffer texture]);
     // no need to use self.outputTextureOptions here, we always need these texture options
@@ -115,9 +117,11 @@
             NSInteger textureIndexOfTarget = [[targetTextureIndices objectAtIndex:indexOfObject] integerValue];
             
             [currentTarget setInputSize:layerPixelSize atIndex:textureIndexOfTarget];
+#warning jp_修改GPUImage：解决<<单次刷新静态水印导致崩溃>>的问题
+            [currentTarget setInputFramebuffer:outputFramebuffer atIndex:textureIndexOfTarget]; // add this line, because the outputFramebuffer is update above. 添加此行，因为outputFramebuffer在上面更新。
             [currentTarget newFrameReadyAtTime:frameTime atIndex:textureIndexOfTarget];
         }
-    }    
+    }
 }
 
 @end
