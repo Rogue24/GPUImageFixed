@@ -267,6 +267,8 @@ NSString *const kGPUImageColorSwizzlingFragmentShaderString = SHADER_STRING
     }
 }
 
+#warning jp_修改GPUImage：解决<<视频第一帧会黑屏>>的问题
+static BOOL allowWriteAudio = NO;
 - (void)startRecording;
 {
     alreadyFinishedRecording = NO;
@@ -279,6 +281,9 @@ NSString *const kGPUImageColorSwizzlingFragmentShaderString = SHADER_STRING
     });
     isRecording = YES;
 	//    [assetWriter startSessionAtSourceTime:kCMTimeZero];
+    
+#warning jp_修改GPUImage：解决<<视频第一帧会黑屏>>的问题
+    allowWriteAudio = NO;
 }
 
 - (void)startRecordingInOrientation:(CGAffineTransform)orientationTransform;
@@ -365,6 +370,11 @@ NSString *const kGPUImageColorSwizzlingFragmentShaderString = SHADER_STRING
 
 - (void)processAudioBuffer:(CMSampleBufferRef)audioBuffer;
 {
+#warning jp_修改GPUImage：解决<<视频第一帧会黑屏>>的问题
+    if (!allowWriteAudio) {
+      return;
+    }
+    
     if (!isRecording || _paused)
     {
         return;
@@ -800,6 +810,9 @@ NSString *const kGPUImageColorSwizzlingFragmentShaderString = SHADER_STRING
             {
                 if (![assetWriterPixelBufferInput appendPixelBuffer:pixel_buffer withPresentationTime:frameTime])
                     NSLog(@"Problem appending pixel buffer at time: %@", CFBridgingRelease(CMTimeCopyDescription(kCFAllocatorDefault, frameTime)));
+                
+#warning jp_修改GPUImage：解决<<视频第一帧会黑屏>>的问题
+                allowWriteAudio = YES;
             }
             else
             {
