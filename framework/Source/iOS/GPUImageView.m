@@ -235,12 +235,21 @@
     runSynchronouslyOnVideoProcessingQueue(^{
         CGFloat heightScaling, widthScaling;
         
-        CGSize currentViewSize = self.bounds.size;
+#warning jp_修改GPUImage：解决<<子线程访问UI属性>>的问题
+        __block CGRect currentViewBounds;
+        if (NSThread.isMainThread) {
+            currentViewBounds = self.bounds;
+        } else {
+            dispatch_sync(dispatch_get_main_queue(), ^{
+                currentViewBounds = self.bounds;
+            });
+        }
+        CGSize currentViewSize = currentViewBounds.size;
         
         //    CGFloat imageAspectRatio = inputImageSize.width / inputImageSize.height;
         //    CGFloat viewAspectRatio = currentViewSize.width / currentViewSize.height;
         
-        CGRect insetRect = AVMakeRectWithAspectRatioInsideRect(inputImageSize, self.bounds);
+        CGRect insetRect = AVMakeRectWithAspectRatioInsideRect(inputImageSize, currentViewBounds);
         
         switch(_fillMode)
         {
